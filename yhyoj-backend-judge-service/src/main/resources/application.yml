@@ -25,24 +25,34 @@ spring:
     username: root
     password: 123456
     # Redis 配置
-    redis:
-      database: 0
-      host: localhost
-      port: 6379
-      timeout: 5000
+  redis:
+    database: 1
+    host: localhost
+    port: 6379
+    timeout: 5000
   servlet:
     multipart:
       # 大小限制
       max-file-size: 10MB
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+  rabbitmq:
+    host: localhost
+    port: 5672
+    password: guest
+    username: guest
 server:
   address: 0.0.0.0
   port: 8104
   servlet:
-    context-path: /api
+    context-path: /api/judge
     # cookie 30 天过期
     session:
       cookie:
         max-age: 2592000
+        path: /api
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
@@ -55,3 +65,5 @@ mybatis-plus:
 # 代码沙箱配置
 codesandbox:
   type: remote
+knife4j:
+  enable: true

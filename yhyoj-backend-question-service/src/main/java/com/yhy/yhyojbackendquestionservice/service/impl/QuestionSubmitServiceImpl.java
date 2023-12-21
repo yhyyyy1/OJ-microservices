@@ -17,10 +17,11 @@ import com.yhy.yhyojbackendmodel.model.enums.QuestionSubmitStatusEnum;
 import com.yhy.yhyojbackendmodel.model.vo.QuestionSubmitVO;
 import com.yhy.yhyojbackendmodel.model.vo.UserVO;
 import com.yhy.yhyojbackendquestionservice.mapper.QuestionSubmitMapper;
+import com.yhy.yhyojbackendquestionservice.rabbitmq.MyMessageProducer;
 import com.yhy.yhyojbackendquestionservice.service.QuestionService;
 import com.yhy.yhyojbackendquestionservice.service.QuestionSubmitService;
-import com.yhy.yhyojbackendserviceclient.service.JudgeService;
-import com.yhy.yhyojbackendserviceclient.service.UserService;
+import com.yhy.yhyojbackendserviceclient.service.JudgeFeignClient;
+import com.yhy.yhyojbackendserviceclient.service.UserFeignClient;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +30,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -43,10 +43,13 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
     @Resource
     private QuestionService questionService;
     @Resource
-    private UserService userService;
+    private UserFeignClient userFeignClient;
     @Resource
     @Lazy
-    private JudgeService judgeService;
+    private JudgeFeignClient judgeFeignClient;
+
+    @Resource
+    private MyMessageProducer myMessageProducer;
 
     /**
      * 提交题目
@@ -84,12 +87,13 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         if (!save) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "数据插入失败");
         }
-        // todo 执行判题服务
+        // 发送消息
         Long questionSubmitId = questionSubmit.getId();
-        CompletableFuture.runAsync(() -> {
-            judgeService.doJudge(questionSubmitId);
-        });
-        return questionSubmit.getId();
+        myMessageProducer.sendMessage("code_exchange", "88044327", String.valueOf(questionSubmitId));
+//        CompletableFuture.runAsync(() -> {
+//            judgeFeignClient.doJudge(questionSubmitId);
+//        });
+        return questionSubmitId;
     }
 
     /**
@@ -131,10 +135,10 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         // 脱敏：仅本人和管理员能看见自己（提交 userId 和登录用户 id 不同）提交的代码
         long userId = loginUser.getId();
         // 处理脱敏
-        if (userId != questionSubmit.getUserId() && !userService.isAdmin(loginUser)) {
+        if (userId != questionSubmit.getUserId() && !userFeignClient.isAdmin(loginUser)) {
             questionSubmitVO.setCode(null);
         }
-        UserVO userVO = userService.getUserVO(loginUser);
+        UserVO userVO = userFeignClient.getUserVO(loginUser);
         questionSubmitVO.setUserVO(userVO);
         return questionSubmitVO;
     }

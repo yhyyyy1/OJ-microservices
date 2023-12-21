@@ -15,7 +15,6 @@ model——模块类
 ## user-service & judge-service & question-service
 直接copy之前的就行
 为了处理服务的内部调用（经过划分之后代码分到不同的包中，找不到对应的Bean），
-使用OpenFeign组件实现跨服务的远程调用（Http调用客户端，提供更方便的方式远程调用其他服务——Nacos）
-
+使用OpenFeign组件实现跨服务的远程调用（Http调用客户端，提供更方便的方式远程调用其他服务——Nacos）,在
 
 ## gateway
